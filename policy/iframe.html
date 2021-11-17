@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User details</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div id="api" style="display: none"></div>
+    <iframe id="iframeOverlay" src=""
+        allow="fullscreen *;camera *;encrypted-media *;"
+        style="width: 100%; height: 100%; position: absolute; padding: 0; margin: 0; border: 0">
+        Loading...
+    </iframe>
+    <script>
+        function authidIframe() {
+            var iframeInput = document.getElementById("iframeUrl");
+
+            if (iframeInput && iframeInput.value) {
+                window.addEventListener("message", (event) => {
+                    console.log(JSON.stringify(event.data))
+
+                    if (event.data.success) {
+                        //pageName should be verifiedPage
+                        document.getElementById("continue").click();
+                    } else {
+                        switch(event.data.pageName){
+                            case "transactionNotValidPage":
+                            case "transactionMaxAttemptsPage":
+                            case "verifiedMatchFailPage":
+                            case "verifyDeclinedPage":
+                            case "standardErrorPage":
+                            case "defaultFailedPage":
+                                document.getElementById("cancel").click();
+                                break;
+                        }
+                    }
+                }, false);
+
+                document.getElementById("iframeOverlay").src = iframeInput.value;
+            } else {
+                setTimeout(authidIframe, 100);
+            }
+        }
+        authidIframe();
+    </script>
+</body>
+</html>

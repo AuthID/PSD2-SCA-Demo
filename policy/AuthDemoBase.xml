@@ -1,0 +1,360 @@
+<TrustFrameworkPolicy
+   xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+   xmlns:xsd="https://www.w3.org/2001/XMLSchema"
+   xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06"
+   PolicySchemaVersion="0.3.0.0"
+   TenantId="authdemob2c.onmicrosoft.com"
+   PolicyId="B2C_1A_AuthDemoBase"
+   PublicPolicyUri="http://authdemob2c.onmicrosoft.com/B2C_1A_AuthDemoBase"
+   DeploymentMode="Development">
+
+  <BasePolicy>
+    <TenantId>authdemob2c.onmicrosoft.com</TenantId>
+    <PolicyId>B2C_1A_TrustFrameworkExtensions</PolicyId>
+  </BasePolicy>
+
+  <BuildingBlocks>
+    <ClaimsSchema>
+      <ClaimType Id="extension_authIDEnrolled">
+        <DisplayName>Biometrics with documents have been enrolled</DisplayName>
+        <DataType>boolean</DataType>
+      </ClaimType>
+      <ClaimType Id="authIDVerified">
+        <DisplayName>Biometrics have been verified</DisplayName>
+        <DataType>boolean</DataType>
+      </ClaimType>
+      <ClaimType Id="fromSender">
+        <DisplayName>Sender</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+      <ClaimType Id="senderInfo">
+        <DisplayName>Sender Info</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+      <ClaimType Id="toRecipient">
+        <DisplayName>Recipient</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+      <ClaimType Id="amountToSend">
+        <DisplayName>Amount</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+      <ClaimType Id="OperationID">
+        <DisplayName>authID Operatio ID</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+      <ClaimType Id="TransactionID">
+        <DisplayName>authID Xfer ID</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+      <ClaimType Id="OneTimeSecret">
+        <DisplayName>authID Op/Xfer OTP</DisplayName>
+        <DataType>string</DataType>
+      </ClaimType>
+      <ClaimType Id="iframeUrl">
+        <DisplayName>iframeUrl</DisplayName>
+        <DataType>string</DataType>
+        <UserInputType>Readonly</UserInputType>
+      </ClaimType>
+    </ClaimsSchema>
+
+    <ContentDefinitions>
+      <ContentDefinition Id="api.selfasserted.authid.iframe">
+        <LoadUri>https://authdemob2c.azurewebsites.net/policy-iframe.html</LoadUri>
+        <RecoveryUri>~/common/default_page_error.html</RecoveryUri>
+        <DataUri>urn:com:microsoft:aad:b2c:elements:contract:selfasserted:1.2.0</DataUri>
+        <Metadata>
+          <Item Key="DisplayName">authID Authentication</Item>
+        </Metadata>
+      </ContentDefinition>
+    </ContentDefinitions>
+  </BuildingBlocks>
+
+  <ClaimsProviders>
+    <ClaimsProvider>
+      <DisplayName>Azure Active Directory</DisplayName>
+      <TechnicalProfiles>
+      <TechnicalProfile Id="AAD-Common">
+        <Metadata>
+          <!--Insert b2c-extensions-app application ID here, for example: 11111111-1111-1111-1111-111111111111-->  
+          <Item Key="ClientId">daa39c22-54a7-496a-8db0-683aa892b964</Item>
+          <!--Insert b2c-extensions-app application ObjectId here, for example: 22222222-2222-2222-2222-222222222222-->
+          <Item Key="ApplicationObjectId">f8da722e-f12b-4a4f-8662-d440e5ca12b0</Item>
+        </Metadata>
+      </TechnicalProfile>
+        <TechnicalProfile Id="AAD-UserWriteProfileUsingObjectId">
+          <Metadata>
+            <Item Key="Operation">Write</Item>
+            <Item Key="RaiseErrorIfClaimsPrincipalAlreadyExists">false</Item>
+            <Item Key="RaiseErrorIfClaimsPrincipalDoesNotExist">true</Item>
+          </Metadata>
+          <IncludeInSso>false</IncludeInSso>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="objectId" Required="true" />
+          </InputClaims>
+          <PersistedClaims>
+            <PersistedClaim ClaimTypeReferenceId="objectId" />
+            <PersistedClaim ClaimTypeReferenceId="givenName" />
+            <PersistedClaim ClaimTypeReferenceId="surname" />
+            <PersistedClaim ClaimTypeReferenceId="extension_authIDEnrolled" />
+          </PersistedClaims>
+          <IncludeTechnicalProfile ReferenceId="AAD-Common" />
+        </TechnicalProfile>
+
+        <!-- The following technical profile is used to read data after user authenticates. -->
+        <TechnicalProfile Id="AAD-UserReadUsingObjectId">
+          <Metadata>
+            <Item Key="Operation">Read</Item>
+            <Item Key="RaiseErrorIfClaimsPrincipalDoesNotExist">true</Item>
+          </Metadata>
+          <IncludeInSso>false</IncludeInSso>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="objectId" Required="true" />
+          </InputClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="signInNames.emailAddress" />
+            <OutputClaim ClaimTypeReferenceId="givenName" />
+            <OutputClaim ClaimTypeReferenceId="surname" />
+            <OutputClaim ClaimTypeReferenceId="extension_authIDEnrolled" />
+          </OutputClaims>
+          <IncludeTechnicalProfile ReferenceId="AAD-Common" />
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+
+    <ClaimsProvider>
+      <DisplayName>authID demo service</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="Custom-authID-startSelfie">
+          <DisplayName>authID demo Selfie</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.RestfulProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
+          <Metadata>
+            <!-- TODO: adapt URL -->
+            <Item Key="ServiceUrl">https://authdemob2c.azurewebsites.net/api/startSelfie</Item>
+            <Item Key="SendClaimsIn">Body</Item>
+            <Item Key="AuthenticationType">Bearer</Item>
+            <Item Key="ResolveJsonPathsInJsonTokens">true</Item>
+            <Item Key="BearerTokenTransmissionMethod">AuthorizationHeader</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="BearerAuthenticationToken" StorageReferenceId="B2C_1A_IDCToken"/>
+          </CryptographicKeys>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="signInNames.emailAddress" PartnerClaimType="email" Required="true"/>
+          </InputClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="OperationId" Required="true"/>
+            <OutputClaim ClaimTypeReferenceId="OneTimeSecret" Required="true"/>
+            <OutputClaim ClaimTypeReferenceId="iframeUrl" Required="true"/>
+          </OutputClaims>
+        </TechnicalProfile>
+        <TechnicalProfile Id="Custom-authID-captureSelfie">
+          <DisplayName>authID demo iframe</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.SelfAssertedAttributeProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" />
+          <Metadata>
+            <Item Key="ContentDefinitionReferenceId">api.selfasserted.authid.iframe</Item>
+          </Metadata>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="iframeUrl" Required="true"/>
+          </InputClaims>
+          <DisplayClaims>
+            <DisplayClaim ClaimTypeReferenceId="iframeUrl"/>
+          </DisplayClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="iframeUrl" Required="true" />
+          </OutputClaims>
+        </TechnicalProfile>
+        <TechnicalProfile Id="Custom-authID-checkSelfie">
+          <DisplayName>authID demo Selfie</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.RestfulProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
+          <Metadata>
+            <!-- TODO: adapt URL -->
+            <Item Key="ServiceUrl">https://authdemob2c.azurewebsites.net/api/checkSelfie</Item>
+            <Item Key="SendClaimsIn">Body</Item>
+            <Item Key="AuthenticationType">Bearer</Item>
+            <Item Key="ResolveJsonPathsInJsonTokens">true</Item>
+            <Item Key="BearerTokenTransmissionMethod">AuthorizationHeader</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="BearerAuthenticationToken" StorageReferenceId="B2C_1A_IDCToken"/>
+          </CryptographicKeys>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="objectId" Required="true"/>
+            <InputClaim ClaimTypeReferenceId="signInNames.emailAddress" PartnerClaimType="email" Required="true" />
+            <InputClaim ClaimTypeReferenceId="displayName" Required="true"/>
+            <InputClaim ClaimTypeReferenceId="OperationId" Required="true"/>
+          </InputClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="extension_authIDEnrolled" PartnerClaimType="authIDEnrolled" Required="true"/>
+          </OutputClaims>
+        </TechnicalProfile>
+
+        <TechnicalProfile Id="Custom-authID-startVerify">
+          <DisplayName>authID demo Selfie</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.RestfulProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
+          <Metadata>
+            <!-- TODO: adapt URL -->
+            <Item Key="ServiceUrl">https://authdemob2c.azurewebsites.net/api/startVerify</Item>
+            <Item Key="SendClaimsIn">Body</Item>
+            <Item Key="AuthenticationType">Bearer</Item>
+            <Item Key="ResolveJsonPathsInJsonTokens">true</Item>
+            <Item Key="BearerTokenTransmissionMethod">AuthorizationHeader</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="BearerAuthenticationToken" StorageReferenceId="B2C_1A_IDCToken"/>
+          </CryptographicKeys>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="fromSender" PartnerClaimType="objectId" Required="true"/>
+            <InputClaim ClaimTypeReferenceId="senderInfo" PartnerClaimType="email"/>
+            <InputClaim ClaimTypeReferenceId="toRecipient" Required="true" />
+            <InputClaim ClaimTypeReferenceId="amountToSend" Required="true"/>
+          </InputClaims>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="TransactionId" Required="true"/>
+            <OutputClaim ClaimTypeReferenceId="OneTimeSecret" Required="true"/>
+            <OutputClaim ClaimTypeReferenceId="iframeUrl" Required="true"/>
+          </OutputClaims>
+        </TechnicalProfile>
+        <TechnicalProfile Id="Custom-authID-checkVerify">
+          <DisplayName>authID demo Selfie</DisplayName>
+          <Protocol Name="Proprietary" Handler="Web.TPEngine.Providers.RestfulProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
+          <Metadata>
+            <!-- TODO: adapt URL -->
+            <Item Key="ServiceUrl">https://authdemob2c.azurewebsites.net/api/checkVerify</Item>
+            <Item Key="SendClaimsIn">Body</Item>
+            <Item Key="AuthenticationType">Bearer</Item>
+            <Item Key="ResolveJsonPathsInJsonTokens">true</Item>
+            <Item Key="BearerTokenTransmissionMethod">AuthorizationHeader</Item>
+          </Metadata>
+          <CryptographicKeys>
+            <Key Id="BearerAuthenticationToken" StorageReferenceId="B2C_1A_IDCToken"/>
+          </CryptographicKeys>
+          <InputClaims>
+            <InputClaim ClaimTypeReferenceId="fromSender" PartnerClaimType="objectId" Required="true"/>
+            <InputClaim ClaimTypeReferenceId="TransactionId" Required="true"/>
+          </InputClaims>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+
+    <ClaimsProvider>
+      <DisplayName>Extract and check id_token_hint claims</DisplayName>
+      <TechnicalProfiles>
+        <TechnicalProfile Id="ProcessIdTokenHint">
+          <DisplayName>Process id_token_hint claims</DisplayName>
+          <Protocol Name="None" />
+          <Metadata>
+            <Item Key="METADATA">https://authdemob2c.azurewebsites.net/.well-known/openid-configuration</Item>
+          </Metadata>
+          <OutputClaims>
+            <OutputClaim ClaimTypeReferenceId="fromSender" Required="true" />
+            <OutputClaim ClaimTypeReferenceId="senderInfo" />
+            <OutputClaim ClaimTypeReferenceId="amountToSend" Required="true" />
+            <OutputClaim ClaimTypeReferenceId="toRecipient" Required="true" />
+          </OutputClaims>
+        </TechnicalProfile>
+      </TechnicalProfiles>
+    </ClaimsProvider>
+
+  </ClaimsProviders>
+
+  <UserJourneys>
+
+    <UserJourney Id="SignUpOrSignIn">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="CombinedSignInAndSignUp" ContentDefinitionReferenceId="api.signuporsignin">
+          <ClaimsProviderSelections>
+            <ClaimsProviderSelection ValidationClaimsExchangeId="LocalAccountSigninEmailExchange" />
+          </ClaimsProviderSelections>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="LocalAccountSigninEmailExchange" TechnicalProfileReferenceId="SelfAsserted-LocalAccountSignin-Email" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimsExist" ExecuteActionsIf="true">
+              <Value>objectId</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="SignUpWithLogonEmailExchange" TechnicalProfileReferenceId="LocalAccountSignUpWithLogonEmail" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="3" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="AADUserReadWithObjectId" TechnicalProfileReferenceId="AAD-UserReadUsingObjectId" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="4" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimEquals" ExecuteActionsIf="true">
+              <Value>extension_authIDEnrolled</Value>
+              <Value>True</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="BeginBiometrics" TechnicalProfileReferenceId="Custom-authID-startSelfie" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="5" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimEquals" ExecuteActionsIf="true">
+              <Value>extension_authIDEnrolled</Value>
+              <Value>True</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="CaptureBiometrics" TechnicalProfileReferenceId="Custom-authID-captureSelfie" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="6" Type="ClaimsExchange">
+          <Preconditions>
+            <Precondition Type="ClaimEquals" ExecuteActionsIf="true">
+              <Value>extension_authIDEnrolled</Value>
+              <Value>True</Value>
+              <Action>SkipThisOrchestrationStep</Action>
+            </Precondition>
+          </Preconditions>
+          <ClaimsExchanges>
+            <ClaimsExchange Id="EnrolBiometrics" TechnicalProfileReferenceId="Custom-authID-checkSelfie" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="7" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="AADUserWriteWithObjectId" TechnicalProfileReferenceId="AAD-UserWriteProfileUsingObjectId" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="8" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+
+    <UserJourney Id="ConfirmXfer">
+      <OrchestrationSteps>
+        <OrchestrationStep Order="1" Type="GetClaims" CpimIssuerTechnicalProfileReferenceId="ProcessIdTokenHint" />
+        <OrchestrationStep Order="2" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="BeginBiometrics" TechnicalProfileReferenceId="Custom-authID-startVerify" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="3" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="CaptureBiometrics" TechnicalProfileReferenceId="Custom-authID-captureSelfie" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="4" Type="ClaimsExchange">
+          <ClaimsExchanges>
+            <ClaimsExchange Id="EnrolBiometrics" TechnicalProfileReferenceId="Custom-authID-checkVerify" />
+          </ClaimsExchanges>
+        </OrchestrationStep>
+        <OrchestrationStep Order="5" Type="SendClaims" CpimIssuerTechnicalProfileReferenceId="JwtIssuer" />
+      </OrchestrationSteps>
+      <ClientDefinition ReferenceId="DefaultWeb" />
+    </UserJourney>
+
+  </UserJourneys>
+
+</TrustFrameworkPolicy>
